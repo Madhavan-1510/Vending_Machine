@@ -1,10 +1,10 @@
-# Vending_Machine
+# Vending Machine
 # EXP NO: 6.B  Design and simulate a Vending Machine Controller using Verilog HDL, and verify its functionality using a testbench
 # Aim
 To design and simulate a Vending Machine Controller using Verilog HDL, and verify its functionality using a testbench in Vivado.
 
 # Apparatus required:
-Vivad0 
+Vivado
 
 # Problem Statement
 Design a vending machine that:
@@ -88,9 +88,104 @@ endmodule
 ```
 # Testbench
 ```
+`timescale 1ns / 1ps
 
+module vending_tb;
+
+reg clk;
+reg reset;
+reg coin5;
+reg coin10;
+
+wire product;
+wire change;
+
+// Instantiate the vending machine
+vending uut (
+    .clk(clk),
+    .reset(reset),
+    .coin5(coin5),
+    .coin10(coin10),
+    .product(product),
+    .change(change)
+);
+
+// Clock generation (10ns period)
+always #5 clk = ~clk;
+
+initial begin
+    // Initialize inputs
+    clk = 0;
+    reset = 1;
+    coin5 = 0;
+    coin10 = 0;
+
+    // Apply reset
+    #10 reset = 0;
+
+    // Test Case 1: 5 + 10 = 15 (product)
+    #10 coin5 = 1;  #10 coin5 = 0;
+    #10 coin10 = 1; #10 coin10 = 0;
+
+    // Wait
+    #20;
+
+    // Test Case 2: 10 + 10 = 20 (product + change)
+    #10 coin10 = 1; #10 coin10 = 0;
+    #10 coin10 = 1; #10 coin10 = 0;
+
+    // Wait
+    #20;
+
+    // Test Case 3: 5 + 5 + 5 = 15 (product)
+    #10 coin5 = 1; #10 coin5 = 0;
+    #10 coin5 = 1; #10 coin5 = 0;
+    #10 coin5 = 1; #10 coin5 = 0;
+
+    // Wait
+    #30;
+
+    $finish;
+end
+
+// Monitor signals
+initial begin
+    $monitor("Time=%0t | coin5=%b coin10=%b | product=%b change=%b",
+              $time, coin5, coin10, product, change);
+end
+
+endmodule
 ```
-Expected Waveform Behavior
+
+# Constraint
+```
+## vending_machine.xdc - RealDigital Boolean Board (XC7S50)
+
+## Clock (100 MHz onboard oscillator)
+set_property -dict {PACKAGE_PIN F14 IOSTANDARD LVCMOS33} [get_ports {clk}]
+create_clock -period 10.000 -name sys_clk [get_ports {clk}]
+
+## Bank 0 voltage (required for bitstream generation)
+set_property CFGBVS VCCO [current_design]
+set_property CONFIG_VOLTAGE 3.3 [current_design]
+
+## Reset - pushbutton BTN0
+set_property -dict {PACKAGE_PIN J2 IOSTANDARD LVCMOS33} [get_ports {reset}]
+
+## coin5 - pushbutton BTN1
+set_property -dict {PACKAGE_PIN J5 IOSTANDARD LVCMOS33} [get_ports {coin5}]
+
+## coin10 - pushbutton BTN2
+set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports {coin10}]
+
+## product - LED0
+set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports {product}]
+
+## change - LED1
+set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} [get_ports {change}]
+```
+# Expected Waveform Behavior
+```
 Case 1: 5 + 5 + 5
    dispense = 1
    change = 0
@@ -100,8 +195,9 @@ Case 2: 10 + 5
 Case 3: 10 + 10
    dispense = 1
    change = 1
-
+```
 # Output waveform 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/6d5a3611-f435-4732-ac13-dfa5304c16ac" />
 
 # Conclusion
 The vending machine controller was successfully designed using a Moore FSM model. The simulation verified correct product dispensing and change return behavior for different coin inputs.
